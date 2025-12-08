@@ -1,0 +1,27 @@
+{
+  "input_folder": "./input",
+  "output_folder": "./output",
+  "file_pattern": "*.xlsx",
+  "identification": {
+    "matricule_keyword": "Matricule",
+    "matricule_column": 0,
+    "data_start_after": "Période"
+  },
+  "columns": {
+    "periode": 0,
+    "poste": 1,
+    "tps_saisie": 2,
+    "tps_alloue": 3,
+    "ecart": 4,
+    "efficience": 5
+  },
+  "output_format": {
+    "template": "production_efficience",
+    "sections": ["header", "data", "recap"],
+    "formatting": {
+      "header_bold": true,
+      "number_format": "0.00",
+      "borders": true
+    }
+  }
+}
