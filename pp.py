@@ -90,15 +90,14 @@ def extract_employee_data(file_path: str):
     return pd.DataFrame(employees)
 
 
-# ==================== Streamlit App ====================
-# Set page config
+#         Streamlit App 
+# config
 st.set_page_config(
     page_title="Production Efficiency Dashboard",
     page_icon="📊",
     layout="wide"
 )
 
-# Title and description
 st.title("Production Efficiency Dashboard")
 st.markdown("Upload X3 production efficiency reports and get instant analysis")
 
@@ -126,7 +125,7 @@ with st.sidebar:
 if not uploaded_files:
     st.info("👆 Please upload one or more Excel files to get started")
 
-    # Show example/instructions
+    # instructions
     st.markdown("### Expected File Format")
     st.markdown("""
     Your Excel file should contain:
@@ -139,7 +138,7 @@ if not uploaded_files:
     """)
 
 else:
-    # Process uploaded files
+    #  uploaded files
     all_data = []
 
     for uploaded_file in uploaded_files:
@@ -177,7 +176,6 @@ else:
         periods = combined_df['Period'].unique()
         st.metric("Periods", len(periods))
 
-    # Tabs for different views
     tab1, tab2, tab3, tab4 = st.tabs(["Charts", "Data Table", "Employee Details", "Download"])
 
     with tab1:
@@ -186,7 +184,6 @@ else:
         col1, col2 = st.columns(2)
 
         with col1:
-            # Efficiency histogram
             fig_hist = px.histogram(
                 combined_df,
                 x='Efficience_Tech',
@@ -199,7 +196,6 @@ else:
             st.plotly_chart(fig_hist, use_container_width=True)
 
         with col2:
-            # Top 10 employees by efficiency
             top_10 = combined_df.nlargest(10, 'Efficience_Tech')
             fig_bar = px.bar(
                 top_10,
@@ -238,7 +234,6 @@ else:
             )
             st.plotly_chart(fig_period, use_container_width=True)
 
-        # Scatter plot: Hours vs Efficiency
         st.markdown("### Hours Worked vs Efficiency")
         fig_scatter = px.scatter(
             combined_df,
@@ -254,7 +249,7 @@ else:
     with tab2:
         st.markdown("### Data Table")
 
-        # Add filters
+        # filters
         col1, col2 = st.columns(2)
 
         with col1:
@@ -272,7 +267,6 @@ else:
                 value=0.0
             )
 
-        # Apply filters
         filtered_df = combined_df[
             (combined_df['Period'].isin(period_filter)) &
             (combined_df['Efficience_Tech'] >= min_efficiency)
@@ -321,7 +315,6 @@ else:
                             efficiency_pct = row['Efficience_Tech'] * 100
                             st.metric("Efficiency", f"{efficiency_pct:.1f}%")
 
-                            # Color code efficiency
                             if row['Efficience_Tech'] >= 1.0:
                                 st.success("✅ Above target")
                             elif row['Efficience_Tech'] >= 0.8:
@@ -337,7 +330,6 @@ else:
         col1, col2 = st.columns(2)
 
         with col1:
-            # Excel download
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 combined_df.to_excel(writer, index=False, sheet_name='Employee_Efficiency')
@@ -350,7 +342,6 @@ else:
             )
 
         with col2:
-            # CSV download
             csv = combined_df.to_csv(index=False)
             st.download_button(
                 label="📥 Download as CSV",
@@ -359,7 +350,6 @@ else:
                 mime="text/csv"
             )
 
-        # Summary statistics download
         st.markdown("### Summary Statistics")
         summary = combined_df.describe()
         st.dataframe(summary)
