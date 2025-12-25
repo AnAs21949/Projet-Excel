@@ -100,7 +100,6 @@ def extract_employee_data(file_path: str):
     return pd.DataFrame(employees)
 
 
-# ==================== Streamlit App ====================
 # Configure page
 st.set_page_config(
     page_title="Production Efficiency Dashboard",
@@ -133,7 +132,7 @@ with st.sidebar:
 
 # Main content
 if not uploaded_files:
-    st.info("👆 Please upload one or more Excel files to get started")
+    st.info("Please upload one or more Excel files to get started")
 
     # instructions
     st.markdown("### Expected File Format")
@@ -326,11 +325,11 @@ else:
                             st.metric("Efficiency", f"{efficiency_pct:.1f}%")
 
                             if row['Efficience_Tech'] >= 1.0:
-                                st.success("✅ Above target")
+                                st.success("Above target")
                             elif row['Efficience_Tech'] >= 0.8:
-                                st.warning("⚠️ Near target")
+                                st.warning("Near target")
                             else:
-                                st.error("❌ Below target")
+                                st.error("Error: Below target")
             else:
                 st.warning("No employees found matching your search")
 
@@ -345,7 +344,7 @@ else:
                 combined_df.to_excel(writer, index=False, sheet_name='Employee_Efficiency')
 
             st.download_button(
-                label="📥 Download as Excel",
+                label="Download as Excel",
                 data=output.getvalue(),
                 file_name="cleaned_efficiency_data.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -354,7 +353,7 @@ else:
         with col2:
             csv = combined_df.to_csv(index=False)
             st.download_button(
-                label="📥 Download as CSV",
+                label="Download as CSV",
                 data=csv,
                 file_name="cleaned_efficiency_data.csv",
                 mime="text/csv"
