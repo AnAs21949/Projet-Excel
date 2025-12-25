@@ -263,10 +263,14 @@ else:
             )
 
         with col2:
+            # Get max efficiency, handle NaN/None cases
+            max_eff = combined_df['Efficience_Tech'].max()
+            max_eff_value = float(max_eff) if pd.notna(max_eff) and max_eff > 0 else 1.0
+
             min_efficiency = st.slider(
                 "Minimum Efficiency",
                 min_value=0.0,
-                max_value=float(combined_df['Efficience_Tech'].max()),
+                max_value=max_eff_value,
                 value=0.0
             )
 
