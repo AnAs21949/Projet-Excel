@@ -160,6 +160,20 @@ else:
     # Combine all data
     combined_df = pd.concat(all_data, ignore_index=True)
 
+    # Diagnostic information
+    with st.expander("🔍 Data Extraction Diagnostics", expanded=False):
+        st.markdown("**Efficiency Data Statistics:**")
+        eff_stats = combined_df['Efficience_Tech'].describe()
+        st.write(eff_stats)
+
+        st.markdown("**Sample of extracted data:**")
+        st.dataframe(combined_df[['Employee_Name', 'Period', 'Tps_Saisie', 'Tps_Alloue', 'Ecart', 'Efficience_Tech']].head(10))
+
+        # Check for NaN values
+        nan_count = combined_df['Efficience_Tech'].isna().sum()
+        total_rows = len(combined_df)
+        st.warning(f"⚠️ {nan_count} out of {total_rows} rows have missing efficiency values")
+
     # Display metrics
     st.markdown("## Key Metrics")
     col1, col2, col3, col4 = st.columns(4)
@@ -263,10 +277,14 @@ else:
             )
 
         with col2:
+            # Get max efficiency, use default if NaN
+            max_eff = combined_df['Efficience_Tech'].max()
+            max_eff_value = float(max_eff) if pd.notna(max_eff) and max_eff > 0 else 2.0
+
             min_efficiency = st.slider(
                 "Minimum Efficiency",
                 min_value=0.0,
-                max_value=float(combined_df['Efficience_Tech'].max()),
+                max_value=max_eff_value,
                 value=0.0
             )
 
