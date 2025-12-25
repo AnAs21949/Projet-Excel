@@ -6,12 +6,11 @@ from pathlib import Path
 import re
 from io import BytesIO
 import tempfile
+import numpy as np
 
 
-# ==================== Data Extraction Functions ====================
 def extract_numeric(row, col_idx):
     """Safely extract numeric value from row"""
-    import numpy as np
     if col_idx is None or col_idx >= len(row):
         return np.nan
     value = row[col_idx]
@@ -23,41 +22,46 @@ def extract_numeric(row, col_idx):
         return np.nan
 
 
-def find_column_indices(data):
-    """Find column positions for metrics"""
+def detect_format_and_columns(data):
+    """Detect file format and find column positions for TOTAL MATRICULE rows"""
+    num_cols = len(data.columns)
+    
+    # Find a TOTAL MATRICULE row to detect column positions
     for index, row in data.iterrows():
         row_str = ' '.join(map(str, row.dropna().values))
-        if 'Tps Saisie' in row_str and 'Tps Alloué' in row_str:
-            col_map = {}
-            for col_idx, cell in enumerate(row):
-                if pd.notna(cell):
-                    cell_str = str(cell).strip()
-                    if 'Ecart' in cell_str:
-                        col_map['Ecart (Alloué-Réalisé)'] = col_idx
-                    elif 'Saisie' in cell_str:
-                        col_map['Tps Saisie'] = col_idx
-                    elif 'Alloué' in cell_str and 'Tps Alloué' not in col_map:
-                        col_map['Tps Alloué'] = col_idx
-                    elif 'Efficience' in cell_str:
-                        col_map['Efficience Tech.'] = col_idx
-            if col_map:
-                print(f"DEBUG: Found columns at row {index}: {col_map}")
-                return col_map
-
-    print("DEBUG: Using default column indices")
+        if 'TOTAL MATRICULE' in row_str:
+            # Based on column count, determine format
+            if num_cols <= 10:  # 7-column format (compact)
+                return {
+                    'Tps_Saisie': 1,
+                    'Tps_Alloue': 2,
+                    'Ecart': 3,
+                    'Efficience_Tech': 4
+                }
+            else:  # 26-column format (expanded)
+                return {
+                    'Tps_Saisie': 13,
+                    'Tps_Alloue': 16,
+                    'Ecart': 18,
+                    'Efficience_Tech': 25
+                }
+    
+    # Default fallback
     return {
-        'Tps Saisie': 1,
-        'Tps Alloué': 2,
-        'Ecart (Alloué-Réalisé)': 3,
-        'Efficience Tech.': 4
+        'Tps_Saisie': 1,
+        'Tps_Alloue': 2,
+        'Ecart': 3,
+        'Efficience_Tech': 4
     }
 
 
 def extract_employee_data(file_path: str):
-    """Extract employee efficiency data from X3 report"""
-    data = pd.read_excel(file_path, header=None)
-    column_map = find_column_indices(data)
-
+    """Extract employee efficiency data from X3 report - handles multiple formats"""
+    data = pd.read_excel(file_path, header=None, engine='xlrd')
+    
+    # Auto-detect format and column positions
+    col_map = detect_format_and_columns(data)
+    
     employees = []
     current_employee = {}
     current_period = None
@@ -65,27 +69,30 @@ def extract_employee_data(file_path: str):
     for index, row in data.iterrows():
         row_str = ' '.join(map(str, row.dropna().values))
 
-        matricule_match = re.search(r'Matricule\s*:\s*(\d+\s*\d+)\s*-\s*(.+)', row_str)
+        # Match employee header: "Matricule : 7 001 - SADIK Amina"
+        matricule_match = re.search(r'Matricule\s*:\s*(\d[\d\s]+\d)\s*-\s*(.+?)(?:\s+Période|$)', row_str)
         if matricule_match:
             current_employee = {
-                'Matricule': matricule_match.group(1).strip(),
+                'Matricule': matricule_match.group(1).replace(' ', ''),
                 'Employee_Name': matricule_match.group(2).strip()
             }
             current_period = None
 
-        period_match = re.search(r'(\d{4}/\d{2})', row_str)
+        # Match period in data rows (e.g., "2025/12")
+        period_match = re.search(r'^(\d{4}/\d{2})\s', row_str)
         if period_match and 'TOTAL' not in row_str:
             current_period = period_match.group(1)
 
-        total_match = re.search(r'TOTAL MATRICULE\s*:\s*(\d+\s*\d+)', row_str)
+        # Match TOTAL MATRICULE row - extract totals using detected column positions
+        total_match = re.search(r'TOTAL MATRICULE\s*:\s*(\d[\d\s]+\d)', row_str)
         if total_match and current_employee:
             employee_data = {
                 **current_employee,
                 'Period': current_period if current_period else 'N/A',
-                'Tps_Saisie': extract_numeric(row, column_map.get('Tps Saisie')),
-                'Tps_Alloue': extract_numeric(row, column_map.get('Tps Alloué')),
-                'Ecart': extract_numeric(row, column_map.get('Ecart (Alloué-Réalisé)')),
-                'Efficience_Tech': extract_numeric(row, column_map.get('Efficience Tech.'))
+                'Tps_Saisie': extract_numeric(row, col_map['Tps_Saisie']),
+                'Tps_Alloue': extract_numeric(row, col_map['Tps_Alloue']),
+                'Ecart': extract_numeric(row, col_map['Ecart']),
+                'Efficience_Tech': extract_numeric(row, col_map['Efficience_Tech'])
             }
             employees.append(employee_data)
             current_employee = {}
@@ -338,7 +345,7 @@ else:
                 combined_df.to_excel(writer, index=False, sheet_name='Employee_Efficiency')
 
             st.download_button(
-                label="Download as Excel",
+                label="📥 Download as Excel",
                 data=output.getvalue(),
                 file_name="cleaned_efficiency_data.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
