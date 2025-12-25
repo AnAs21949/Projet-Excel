@@ -34,20 +34,22 @@ def find_column_indices(data):
                     cell_str = str(cell).strip()
                     if 'Ecart' in cell_str:
                         col_map['Ecart (Alloué-Réalisé)'] = col_idx
-                    elif 'Tps Saisie' in cell_str:
+                    elif 'Saisie' in cell_str:
                         col_map['Tps Saisie'] = col_idx
-                    elif 'Alloué' in cell_str:
+                    elif 'Alloué' in cell_str and 'Tps Alloué' not in col_map:
                         col_map['Tps Alloué'] = col_idx
                     elif 'Efficience' in cell_str:
-                        col_map['Efficience Tech.'] = col_idx + 1
+                        col_map['Efficience Tech.'] = col_idx
             if col_map:
+                print(f"DEBUG: Found columns at row {index}: {col_map}")
                 return col_map
 
+    print("DEBUG: Using default column indices")
     return {
-        'Tps Saisie': 13,
-        'Tps Alloué': 16,
-        'Ecart (Alloué-Réalisé)': 18,
-        'Efficience Tech.': 25
+        'Tps Saisie': 10,
+        'Tps Alloué': 12,
+        'Ecart (Alloué-Réalisé)': 14,
+        'Efficience Tech.': 16
     }
 
 
