@@ -91,8 +91,8 @@ def extract_employee_data(file_path: str):
     return pd.DataFrame(employees)
 
 
-#         Streamlit App 
-# config
+# ==================== Streamlit App ====================
+# Configure page
 st.set_page_config(
     page_title="Production Efficiency Dashboard",
     page_icon="📊",
