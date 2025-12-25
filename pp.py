@@ -11,15 +11,16 @@ import tempfile
 # ==================== Data Extraction Functions ====================
 def extract_numeric(row, col_idx):
     """Safely extract numeric value from row"""
+    import numpy as np
     if col_idx is None or col_idx >= len(row):
-        return None
+        return np.nan
     value = row[col_idx]
     if pd.isna(value):
-        return None
+        return np.nan
     try:
         return float(value)
     except:
-        return None
+        return np.nan
 
 
 def find_column_indices(data):
