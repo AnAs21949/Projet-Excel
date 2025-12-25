@@ -46,10 +46,10 @@ def find_column_indices(data):
 
     print("DEBUG: Using default column indices")
     return {
-        'Tps Saisie': 10,
-        'Tps Alloué': 12,
-        'Ecart (Alloué-Réalisé)': 14,
-        'Efficience Tech.': 16
+        'Tps Saisie': 3,
+        'Tps Alloué': 4,
+        'Ecart (Alloué-Réalisé)': 5,
+        'Efficience Tech.': 7
     }
 
 
