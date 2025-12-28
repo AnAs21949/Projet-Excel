@@ -10,7 +10,6 @@ import numpy as np
 
 
 def extract_numeric(row, col_idx):
-    """Safely extract numeric value from row"""
     if col_idx is None or col_idx >= len(row):
         return np.nan
     value = row[col_idx]
@@ -23,7 +22,6 @@ def extract_numeric(row, col_idx):
 
 
 def detect_format_and_columns(data):
-    """Detect file format and find column positions for TOTAL MATRICULE rows"""
     num_cols = len(data.columns)
     
     # Find a TOTAL MATRICULE row to detect column positions
@@ -46,7 +44,6 @@ def detect_format_and_columns(data):
                     'Efficience_Tech': 25
                 }
     
-    # Default fallback
     return {
         'Tps_Saisie': 1,
         'Tps_Alloue': 2,
@@ -59,7 +56,6 @@ def extract_employee_data(file_path: str):
     """Extract employee efficiency data from X3 report - handles multiple formats"""
     data = pd.read_excel(file_path, header=None, engine='xlrd')
     
-    # Auto-detect format and column positions
     col_map = detect_format_and_columns(data)
     
     employees = []
@@ -69,7 +65,6 @@ def extract_employee_data(file_path: str):
     for index, row in data.iterrows():
         row_str = ' '.join(map(str, row.dropna().values))
 
-        # Match employee header: "Matricule : 7 001 - SADIK Amina"
         matricule_match = re.search(r'Matricule\s*:\s*(\d[\d\s]+\d)\s*-\s*(.+?)(?:\s+Période|$)', row_str)
         if matricule_match:
             current_employee = {
@@ -78,12 +73,10 @@ def extract_employee_data(file_path: str):
             }
             current_period = None
 
-        # Match period in data rows (e.g., "2025/12")
         period_match = re.search(r'^(\d{4}/\d{2})\s', row_str)
         if period_match and 'TOTAL' not in row_str:
             current_period = period_match.group(1)
 
-        # Match TOTAL MATRICULE row - extract totals using detected column positions
         total_match = re.search(r'TOTAL MATRICULE\s*:\s*(\d[\d\s]+\d)', row_str)
         if total_match and current_employee:
             employee_data = {
@@ -100,7 +93,6 @@ def extract_employee_data(file_path: str):
     return pd.DataFrame(employees)
 
 
-# Configure page
 st.set_page_config(
     page_title="Production Efficiency Dashboard",
     page_icon="📊",
@@ -110,7 +102,6 @@ st.set_page_config(
 st.title("Production Efficiency Dashboard")
 st.markdown("Upload X3 production efficiency reports and get instant analysis")
 
-# Sidebar
 with st.sidebar:
     st.header("Upload Files")
     uploaded_files = st.file_uploader(
@@ -130,11 +121,9 @@ with st.sidebar:
     - Period comparisons
     """)
 
-# Main content
 if not uploaded_files:
     st.info("Please upload one or more Excel files to get started")
 
-    # instructions
     st.markdown("### Expected File Format")
     st.markdown("""
     Your Excel file should contain:
@@ -147,26 +136,21 @@ if not uploaded_files:
     """)
 
 else:
-    #  uploaded files
     all_data = []
 
     for uploaded_file in uploaded_files:
         with st.spinner(f'Processing {uploaded_file.name}...'):
-            # Save uploaded file temporarily
             temp_dir = tempfile.gettempdir()
             temp_path = Path(temp_dir) / uploaded_file.name
             with open(temp_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
 
-            # Extract data
             df = extract_employee_data(temp_path)
             df['Source_File'] = uploaded_file.name
             all_data.append(df)
 
-    # Combine all data
     combined_df = pd.concat(all_data, ignore_index=True)
 
-    # Display metrics
     st.markdown("## Key Metrics")
     col1, col2, col3, col4 = st.columns(4)
 
@@ -218,7 +202,6 @@ else:
             )
             st.plotly_chart(fig_bar, use_container_width=True)
 
-        # Period comparison (if multiple periods)
         if len(periods) > 1:
             st.markdown("### Period Comparison")
             period_stats = combined_df.groupby('Period').agg({
@@ -281,7 +264,6 @@ else:
             (combined_df['Efficience_Tech'] >= min_efficiency)
         ]
 
-        # Display table
         st.dataframe(
             filtered_df.style.format({
                 'Tps_Saisie': '{:.2f}',
